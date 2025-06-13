@@ -8,7 +8,7 @@ class Piece {
     static c = new Piece(["111","001","001"], "#039FC9", "C", 4, false);
     static y = new Piece(["010","110","011"], "#5b5b5b", "Y", 4, true);
     static b = new Piece(["011","111"], "#ce3665", "B", 4, true);
-    static n = new Piece(["110","010","011"], "#00adc2", "N", 4, true);
+    static n = new Piece(["110","010","011"], "#00adc2", "N", 2, true);
     static e = new Piece(["0100","1111"], "#633a36", "E", 4, true);
     static k = new Piece(["11111"], "#0f3681", "K", 4, false);
     static all = [Piece.u, Piece.t 
@@ -129,10 +129,6 @@ checkRotations:
         return answer; // If no rotation or flip allows the piece to fill the gap, return false
 
 
-
-        // Check if the piece can fill the gap defined by gapTiles
-        
-        // determine the height and width of the gap
         
         
     }

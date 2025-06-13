@@ -2,6 +2,7 @@ const tileSize = 40;
 const gridCols = 12;
 const gridRows = 5;
 let grid;
+let beginSolve = false;
 
 let testIndex = 0;
 let testPieces = [
@@ -48,7 +49,7 @@ function setup() {
     // grid.placePiece(Piece.e, 6, 2);
     // grid.placePiece(Piece.k, 7, 4);
     
-    document.querySelector("#btn-solve").addEventListener("click", solve);
+    document.querySelector("#btn-solve").addEventListener("click", () => beginSolve = !beginSolve);
     document.querySelector("#btn-test").addEventListener("click", test);
     document.querySelector("#btn-traverse").addEventListener("click", traverse);
 
@@ -72,38 +73,78 @@ function test() {
 
 }
 
-function solve() {
-    console.log("Solving...");
-    for(let j = 0; j < gridRows; j++) {
-        for(let i = 0; i < gridCols; i++) {
-            if(grid.squares[i][j] !== 0) {
-                console.log(`Skipping occupied square at (${i}, ${j})`);
-                continue; // Skip if the square is already occupied
-            }
-piecesLoop:
-            for(let piece of Piece.all.filter(p => !p.inUse)) {
-                console.log(`Trying to place piece ${piece.name} at (${i}, ${j})`);
-                for (let k = 0; k < 4; k++) {
-                    if(grid.canPlace(piece, i, j)) {
-                        grid.placePiece(piece, i, j);
-                        console.log(`Placed piece ${piece.name} at (${i}, ${j})`);
-                        break piecesLoop; // Break out of the loop if the piece is placed successfully
-                    } else {
-                        piece.rotate(); // Rotate the piece for the next attempt
-                        console.log(`Rotated piece ${piece.name} to try again`);
-                    
-                    }
-                }
+let currentEmptyTile;
+let currentPieceRotationIndex;
+let currentPieceFlipIndex;
+let currentPiece;
+let sequence = [];
 
-                    // } else {
-                    //     piece.rotate(); // Rotate the piece for the next attempt
-                // }
-                
-            }
-            
-        }
+function solve() {
+    if (grid.isFull) { console.log("grid is full. No action needed."); return; }
+
+    if(!currentEmptyTile) {
+        currentEmptyTile = grid.tiles.find(t => t.isEmpty);
+        
     }
-    console.log("Finished solving.");
+    if (!currentEmptyTile) { console.log('could not get an empty tile, even though grid is not full'); return; }
+    if (!currentPiece) {
+        currentPiece = Piece.all.find(p => !p.inUse && !p.skip);
+        if(!currentPiece) {
+            
+            
+            console.log('cant get an unused piece even though the grid is not full');
+            for(let i = sequence.length - 1; i>=0 ; i--) {
+                grid.removePiece(sequence[i].piece);
+                sequence.pop();
+
+            }
+            currentEmptyTile = null;
+            return;
+        }
+        currentPieceRotationIndex = 0;
+        currentPieceFlipIndex = 0;
+
+        sequence.push({
+            piece: currentPiece,
+            tile: currentEmptyTile,
+            rotation: currentPieceRotationIndex,
+            flip: currentPieceFlipIndex,
+            consumed: false
+        });
+    }
+
+    
+
+   const result = grid.placePiece(currentPiece, currentEmptyTile.col, currentEmptyTile.row);
+   if (!result) {
+    console.log('failed to place');
+    if(currentPieceRotationIndex < currentPiece.rotationCount) {
+        console.log('will rotate');
+        currentPiece.rotate();
+        currentPieceRotationIndex += 1;
+        
+    } else if(currentPieceFlipIndex < (currentPiece.isFlipable ? 1 : 0)) {
+        console.log('will flip');
+        currentPiece.flip();
+        currentPieceRotationIndex = 0;
+        currentPieceFlipIndex += 1;
+    } else {
+        console.log('will skip');
+        
+        currentPiece.skip = true;
+        currentPiece = null;
+        sequence.pop();
+    }
+   }
+   else {
+    console.log('Piece placed...');
+    for(let piece of Piece.all.filter(p => p.skip)) { piece.skip = false; }
+    currentPiece = null;
+    currentEmptyTile = null;
+   }
+    
+
+
 }
 
 function mousePressed() {
@@ -122,6 +163,7 @@ function draw() {
     background(220);
     grid.show();
     grid.showMap(20, height - 70, 6);
+    if(beginSolve) solve();
     
 }
 

@@ -88,15 +88,16 @@ class Grid {
             console.warn("Gaps found after placing piece:", piece.name);
             // remove the piece if it creates gaps
                 setTimeout(() => {
-                    console.warn(`Removing piece ${piece.name} due to gaps.`);
-                    this.removePiece(piece);
+                    // console.warn(`Removing piece ${piece.name} due to gaps.`);
+                    // this.removePiece(piece);
                 }
-                , 1000); // Delay to allow visual feedback
-                //this.removePiece(piece);
-            }
+                , 100); // Delay to allow visual feedback
+                this.removePiece(piece);
+                succefullyPlaced = false; // Mark as unsuccessfully placed
+        }
             
-        succefullyPlaced = false; // Mark as unsuccessfully placed
         this.isFull = this.checkIfAllSquaresFilled();
+        piece.inUse = succefullyPlaced;
         return succefullyPlaced;
         
     }
@@ -198,7 +199,7 @@ class Grid {
 
             }
         }
-        piece.inUse = true;
+        
     }
 
     getAdjacentEmptySquares(col, row) {
@@ -278,6 +279,7 @@ class Grid {
             scale(0.25);
             piece.show(0, 0, tileSize);
             pop();
+            text(piece.name, offsetX + 10, 60);
             
             
             
