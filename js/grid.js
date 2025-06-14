@@ -20,16 +20,16 @@ class Grid {
 
    
 
-    removePiece(piece) {
+    removePiece(orientation) {
         
-        for (let i = 0; i < piece.height; i++) {
-            for (let j = 0; j < piece.width; j++) {
-                const tileIndex = (piece.col + j - piece.topLeftX) + (piece.row + i - piece.topLeftY) * this.cols; // Calculate the index in the 1D tiles array
+        for (let i = 0; i < orientation.height; i++) {
+            for (let j = 0; j < orientation.width; j++) {
+                const tileIndex = (orientation.col + j - orientation.topLeft.col) + (orientation.row + i - orientation.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
                 const tile = this.tiles[tileIndex];
                 if(tile.isGap) {
                     tile.isGap = false; // Reset gap status
                 }
-                if (piece.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
+                if (orientation.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
                 
                 //console.log(`Removing piece ${piece.name} from (${piece.col + j}, ${piece.row + i})`);
                 this.tiles[tileIndex].color = ""; // Reset the color of the tile
@@ -39,36 +39,32 @@ class Grid {
             }
         }
 
-        piece.inUse = false; // Mark the piece as not in use
-        this.pieces = this.pieces.filter(p => p.name !== piece.name);
+        orientation.inUse = false; // Mark the piece as not in use
+        this.pieces = this.pieces.filter(p => p.name !== orientation.name);
         this.traverse(); // Check for gaps after removing the piece
     }
 
-    placePiece(piece, col, row) {
-        if(piece.inUse) {
-            console.warn(`Piece ${piece.name} is already in use. Cannot place it again.`);
-            return false; // Piece is already in use, cannot place it again
-        }
-
-        // debugger;
-        if (row + piece.height - piece.topLeftY > this.rows || col + piece.width - piece.topLeftX > this.cols) {
-            console.warn(`Piece ${piece.name} is too large to fit in (${col},${row}) the grid.`);
+    placePiece(o, col, row) {
+        
+        
+        if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
+            console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
             return false; // Piece is too large for the grid
         }
 
-        if (col - piece.topLeftX < 0 || col + piece.width - piece.topLeftX > this.cols ||
-            row - piece.topLeftY < 0 || row + piece.height - piece.topLeftY > this.rows) {
-            console.warn(`Piece ${piece.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+        if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
+            row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
+            console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
             return false; // Piece is out of bounds
         }
 
         // check if the piece collides with any existing piece
-        for (let i = 0; i < piece.height; i++) {
-            for (let j = 0; j < piece.width; j++) {
-                if (piece.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
-                const tileIndex = (col + j - piece.topLeftX) + (row + i - piece.topLeftY) * this.cols; // Calculate the index in the 1D tiles array
+        for (let i = 0; i < o.height; i++) {
+            for (let j = 0; j < o.width; j++) {
+                if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
+                const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
                 if (!this.tiles[tileIndex].isEmpty) {
-                    console.warn(`Piece ${piece.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                    console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
                     return false; // Collision detected
                 }
             }
@@ -77,27 +73,28 @@ class Grid {
         
 
 
-        this.occupy(piece, col, row);
-        piece.col = col; // Set the column of the piece
-        piece.row = row; // Set the row of the piece
-        this.pieces.push(piece);
+        this.occupy(o, col, row);
+        o.col = col; // Set the column of the piece
+        o.row = row; // Set the row of the piece
+        
+        
 
         let succefullyPlaced = true;
         
         if(this.traverse()) {
-            console.warn("Gaps found after placing piece:", piece.name);
+            console.warn("Gaps found after placing piece:", o.name);
             // remove the piece if it creates gaps
                 setTimeout(() => {
                     // console.warn(`Removing piece ${piece.name} due to gaps.`);
                     // this.removePiece(piece);
                 }
                 , 100); // Delay to allow visual feedback
-                this.removePiece(piece);
+                this.removePiece(o);
                 succefullyPlaced = false; // Mark as unsuccessfully placed
         }
             
         this.isFull = this.checkIfAllSquaresFilled();
-        piece.inUse = succefullyPlaced;
+        o.inUse = succefullyPlaced;
         return succefullyPlaced;
         
     }
@@ -183,18 +180,18 @@ class Grid {
     }
 
 
-    occupy(piece, col, row) {
-        if(piece.topLeftX !== 0 || piece.topLeftY !== 0) {
-            col -= piece.topLeftX; // Adjust column based on the piece's top-left corner
-            row -= piece.topLeftY; // Adjust row based on the piece's top-left corner
+    occupy(orientation, col, row) {
+        if(orientation.topLeft.col !== 0 || orientation.topLeft.row !== 0) {
+            col -= orientation.topLeft.col; // Adjust column based on the piece's top-left corner
+            row -= orientation.topLeft.row; // Adjust row based on the piece's top-left corner
         }
-        for (let i = 0; i < piece.height; i++) {
-            for (let j = 0; j < piece.width; j++) {
-                if (piece.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
+        for (let i = 0; i < orientation.height; i++) {
+            for (let j = 0; j < orientation.width; j++) {
+                if (orientation.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
                 const tileIndex = (col + j) + (row + i) * this.cols; // Calculate the index in the 1D tiles array
 
-                this.tiles[tileIndex].color = piece.fillColor; // Set the color of the tile
-                this.tiles[tileIndex].name = piece.name; // Set the name of the tile
+                this.tiles[tileIndex].color = orientation.fillColor; // Set the color of the tile
+                this.tiles[tileIndex].name = orientation.name; // Set the name of the tile
                 this.tiles[tileIndex].isEmpty = false; // Mark the tile as not empty
 
             }

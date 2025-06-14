@@ -18,25 +18,9 @@ let testPieces = [
 function setup() {
     createCanvas(tileSize * gridCols, tileSize * gridRows + 100);
     grid = new Grid(gridCols, gridRows, tileSize);
-    Piece.u.rotate();
-    Piece.l.rotate();
-    Piece.l.rotate();
-    Piece.l.rotate();
-    Piece.t.rotate();
-    Piece.t.rotate();
-    Piece.t.rotate();
-    Piece.z.flip();
-
-    // Piece.b.flip();
-    // Piece.b.rotate();
-    // Piece.b.rotate();
-
-    // Piece.b.rotate();
-
-
-    //Piece.l.flip();
     
-     //grid.placePiece(Piece.u, 1, 1);
+
+     //grid.placePiece(Piece.u.orientations[0], 10, 1);
      //grid.placePiece(Piece.l, 0, 0);
      //grid.placePiece(Piece.z, 2, 0);
      //grid.placePiece(Piece.p, 2, 2);
@@ -50,7 +34,7 @@ function setup() {
     // grid.placePiece(Piece.k, 7, 4);
     
     document.querySelector("#btn-solve").addEventListener("click", () => beginSolve = !beginSolve);
-    document.querySelector("#btn-test").addEventListener("click", test);
+    document.querySelector("#btn-test").addEventListener("click", trySolve);
     document.querySelector("#btn-traverse").addEventListener("click", traverse);
 
     //pieces.push(Piece.k);
@@ -72,6 +56,53 @@ function test() {
     testIndex++;
 
 }
+
+function trySolve() {
+    const tile = grid.tiles.find(t => t.isEmpty);
+    if(!tile) {
+        console.log("all tiles are filled. Completed");
+        return true;
+    }
+
+    const availableTiles = Piece.all.filter(p => !p.inUse);
+
+    if(availableTiles.length == 0) {
+        console.error('no pieces available, even though some tiles are empty... (error?)');
+        return false;
+    }
+
+    const orientations = [];
+
+    for(let piece of availableTiles) {
+        orientations.push(piece.orientations);
+    }
+
+    if(orientations.length === 0) {
+        console.warn(`no more available orientations for tile (${tile.col}, ${tile.row})`);
+        return false;
+    }
+    all:
+    for(let piece of orientations) {
+        piece:
+        for(let orientation of piece) {
+
+            const success = grid.placePiece(orientation, tile.col, tile.row);
+
+            if(success) {
+                debugger;
+                if(trySolve()) {
+                    return true;
+                }
+                else {
+                    grid.removePiece(orientation);
+                }
+            }
+        }
+    }
+    console.log('all possible orientations tried. no solution found');
+    return false;
+}
+
 
 let currentEmptyTile;
 let currentPieceRotationIndex;
@@ -96,7 +127,7 @@ function solve() {
             for(let i = sequence.length - 1; i>=0 ; i--) {
                 grid.removePiece(sequence[i].piece);
                 sequence.pop();
-
+k
             }
             currentEmptyTile = null;
             return;

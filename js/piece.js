@@ -10,27 +10,56 @@ class Piece {
     static b = new Piece(["011","111"], "#ce3665", "B", 4, true);
     static n = new Piece(["110","010","011"], "#00adc2", "N", 2, true);
     static e = new Piece(["0100","1111"], "#633a36", "E", 4, true);
-    static k = new Piece(["11111"], "#0f3681", "K", 4, false);
-    static all = [Piece.u, Piece.t 
-        , Piece.w, Piece.l, Piece.z,Piece.p, Piece.c, Piece.y, Piece.b, Piece.n, Piece.e, Piece.k 
-        ];
+    static k = new Piece(["11111"], "#0f3681", "K", 2, false);
+    static all = [Piece.u, Piece.t, Piece.w, Piece.l, Piece.z,Piece.p, Piece.c, Piece.y, Piece.b, Piece.n, Piece.e, Piece.k ];
 
     constructor(arr, fillColor, name, rotationCount, isFlipable) {
         this.name = name;
-        this.fillColor = fillColor || "gold";
-        this.width = arr[0].length;
-        this.height = arr.length;
+        this.fillColor = fillColor;
+        
         this.rotationCount = rotationCount; // Number of rotations the piece can have
         this.isFlipable = isFlipable; // Whether the piece can be flipped
-        this.shape = [];
         this.order = 0;
-        for (let i = 0; i < this.height; i++) {
-            this.shape[i] = [];
-            for (let j = 0; j < this.width; j++) {
-                this.shape[i][j] = arr[i][j] === '1' ? 1 : 0;
+        this.orientations = [];
+        let shape;
+
+
+        
+        for(let r = 0; r < (isFlipable ? 2 : 1); r++) {
+            for(let i = 0; i < rotationCount; i++) {
+                
+                const id = rotationCount * r + i;
+                if(!shape) shape = this.convertArrayToShape(arr);
+    
+                shape = this.rotate(shape);
+                
+                const topLeft = this.calcuateTopLeft(shape);
+                this.orientations.push({
+                    id,
+                    name: `${name}${id}`,
+                    shape, 
+                    topLeft, 
+                    width: shape[0].length, 
+                    height: shape.length,
+                    fillColor
+                });
+            }
+            if(isFlipable) shape = this.flip(shape);
+        }
+    }
+
+    convertArrayToShape(arr) {
+        const shapeWidth = arr[0].length;
+        const shapeHeight = arr.length;
+
+        const shape = [];
+        for (let i = 0; i < shapeHeight; i++) {
+            shape[i] = [];
+            for (let j = 0; j < shapeWidth; j++) {
+                shape[i][j] = arr[i][j] === '1' ? 1 : 0;
             }
         }
-        this.calcuateTopLeft();
+        return shape;
     }
 
     contains(x, y, gridSize) {
@@ -45,19 +74,21 @@ class Piece {
         );
     }
 
-    flip() {
+    flip(shape) {
+        
         // flip the piece horizontally
         if (!this.isFlipable) {
-            console.warn(`Piece ${this.name} cannot be flipped.`);
+            console.error(`Piece ${this.name} cannot be flipped.`);
             return;
         }
-        for (let i = 0; i < this.height; i++) {
-            this.shape[i].reverse();
+        const shapeHeight = shape.length;
+        let newShape = [];
+        
+        for (let i = 0; i < shapeHeight; i++) {
+            newShape[i] = shape[i].reverse();
         }
-        this.calcuateTopLeft();
-        // Update width and height if necessary
-        // In this case, flipping does not change the dimensions
-        // so we do not need to modify width and height.
+
+        return newShape;
 
     }
 
@@ -133,39 +164,42 @@ checkRotations:
         
     }
 
-    rotate() {
+    rotate(shape) {
+        
+
+        const oldWidth = shape[0].length;
+        const oldHeight = shape.length;
+
+
         // rotate the piece 90 degrees clockwise
         // function should not return a new piece, but modify the existing one
         const newShape = [];
-        for (let j = 0; j < this.width; j++) {
+        for (let j = 0; j < oldWidth; j++) {
             newShape[j] = [];
-            for (let i = this.height - 1; i >= 0; i--) {
-                newShape[j][this.height - 1 - i] = this.shape[i][j];
+            for (let i = oldHeight - 1; i >= 0; i--) {
+                newShape[j][oldHeight - 1 - i] = shape[i][j];
             }
         }
-    
-        this.shape = newShape;
-        this.width = newShape[0].length;
-        this.height = newShape.length;
-        
-        this.calcuateTopLeft();
-        
+
+        return newShape;
     }
 
-    calcuateTopLeft() {
+    calcuateTopLeft(shape) {
         // Calculate the top-left corner of the piece based on its shape
-        this.topLeftX = 0;
-        this.topLeftY = 0;
+        let col = 0;
+        let row = 0;
 
+        main:
         for (let i = 0; i < this.height; i++) {
             for (let j = 0; j < this.width; j++) {
-                if (this.shape[i][j] === 1) {
-                    this.topLeftX = j;
-                    this.topLeftY = i;
-                    return;
+                if (shape[i][j] === 1) {
+                    col = j;
+                    row = i;
+                    break main;
                 }
             }
         }
+        return {col, row};
     }
 
     show(x, y, gridSize = 40) {
