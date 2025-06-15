@@ -17,29 +17,87 @@ class Grid {
         }
 
     }
-
-   
-
-    removePiece(orientation) {
+    highlight(tile) {
+        if(!tile) return;
+        push();
+        noFill();
+        stroke(255, 0, 0, 50);
+        strokeWeight(3);
+        rect(tile.x, tile.y, this.cellSize, this.cellSize);
+        pop();
+    }
+    resetCanBeUsed() {
+        for (let piece of Piece.all) {
+            for (let o of piece.orientations) {
+                o.canBeUsed = false;
+            }
+        }
+    }
+    orientationsThatFitIn(tile) {
+        const found = [];
         
-        for (let i = 0; i < orientation.height; i++) {
-            for (let j = 0; j < orientation.width; j++) {
-                const tileIndex = (orientation.col + j - orientation.topLeft.col) + (orientation.row + i - orientation.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
-                const tile = this.tiles[tileIndex];
-                if(tile.isGap) {
-                    tile.isGap = false; // Reset gap status
+        for(let piece of Piece.all) {
+            const pieceUsed = piece.orientations.find(o => o.inUse);
+            if (pieceUsed) continue;
+            for(let o of piece.orientations) {
+                if(this.orientationFitsIn(o, tile)) {
+                    found.push(o);
                 }
-                if (orientation.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
-                
-                //console.log(`Removing piece ${piece.name} from (${piece.col + j}, ${piece.row + i})`);
-                this.tiles[tileIndex].color = ""; // Reset the color of the tile
-                this.tiles[tileIndex].name = ""; // Reset the name of the tile
-                this.tiles[tileIndex].isEmpty = true; // Mark the tile as empty
-                
+            }
+        }
+        return found;
+
+    }
+   
+    orientationFitsIn(o, tile) {
+        const row = tile.row;
+        const col = tile.col;
+
+        if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
+            console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
+            return false; // Piece is too large for the grid
+        }
+
+        if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
+            row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
+            console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+            return false; // Piece is out of bounds
+        }
+
+        // check if the piece collides with any existing piece
+        for (let i = 0; i < o.height; i++) {
+            for (let j = 0; j < o.width; j++) {
+                if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
+                const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
+                if (!this.tiles[tileIndex].isEmpty) {
+                    console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                    return false; // Collision detected
+                }
             }
         }
 
-        orientation.inUse = false; // Mark the piece as not in use
+        this.occupy(o, col, row);
+
+        let createsGaps = false;
+
+        if(this.traverse()) {
+            console.warn("Gaps found after placing piece:", o.name);
+            createsGaps = true;
+        }
+
+        this.removePiece(o);
+        return !createsGaps;
+    }
+
+    removePiece(orientation) {
+        for(let tile of this.tiles.filter(t => t.name === orientation.name)) {
+            tile.color = "";
+            tile.name = "";
+            tile.isEmpty = true;
+            tile.isGap = false;
+        }
+        orientation.inUse = false;
+
         this.pieces = this.pieces.filter(p => p.name !== orientation.name);
         this.traverse(); // Check for gaps after removing the piece
     }
@@ -131,15 +189,13 @@ class Grid {
             } else if (gapTiles.length === 5) {
                 console.warn(`Found a gap of 5 tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
                 // check existing unplaced pieces to see if they can fill this gap
-                const piece = Piece.all.find(p => !p.inUse && p.canFillGap(gapTiles));
+                const piece = Piece.all.find(p => p.canFillGap(gapTiles));
                 if (!piece) {
                     hasGaps = true; // If no piece can fill the gap, we consider it a gap
                     for(let tile of gapTiles) {
                         tile.isGap = true; // Mark as a gap
                     }
-                } else {
-                    console.log(piece.name);
-                }
+                } 
             }
 
         
@@ -268,19 +324,24 @@ class Grid {
         fill(0);
         textSize(12);
         textAlign(LEFT, TOP);
-        text(this.isFull ? "FULL" : "Unused:", 0, 0);
+        
         let offsetX = 15;
-        for (let piece of Piece.all.filter(p => !p.inUse)) {
-            push();
-            translate(offsetX, 15);
-            scale(0.25);
-            piece.show(0, 0, tileSize);
-            pop();
-            text(piece.name, offsetX + 10, 60);
+        for (let piece of Piece.all) {
+            let offsetY = 0;
+            for(let o of piece.orientations) {
+
+                push();
+                translate(offsetX, offsetY);
+                scale(0.25);
+                piece.show(0, 0, o, tileSize);
+                pop();
+                text(o.name, offsetX - 15, offsetY + 10);
+                offsetY += 60;
+            }
             
             
             
-            offsetX += piece.width  + 45; // Adjust offset for next piece
+            offsetX +=  55; // Adjust offset for next piece
         }
          pop();
 

@@ -94,6 +94,9 @@ class Piece {
 
     canFillGap(gapTiles) {
 
+        const alredyUsed = this.orientations.find(o => o.inUse);
+        if(alredyUsed) return false;
+
 
         let minCol = Infinity, maxCol = -Infinity;
         let minRow = Infinity, maxRow = -Infinity;
@@ -106,62 +109,31 @@ class Piece {
         const gapWidth = maxCol - minCol + 1;
         const gapHeight = maxRow - minRow + 1;
 
-        let answer;
-
-checkFlips:
-        for(let f = 0; f < 1 + (this.isFlipable ? 1 : 0); f++) {
-checkRotations:
-            for(let r = 0; r < this.rotationCount; r++) {
-                answer = true;
-                
-                // Check if the piece can fit in the gap
-                if (gapWidth !== this.width || gapHeight !== this.height) {
+        
+        for(let o of this.orientations) {
+            let answer = true;
+            if (gapWidth === o.width && gapHeight === o.height) {
+                for (let tile of gapTiles) {
+                    const pieceX = tile.col - minCol;
+                    const pieceY = tile.row - minRow;
                     
-                    
-                    answer = false;
-
-                }
-                // Check if the piece can fill the gap
-                // Iterate through the gap tiles and check if the piece can fill them
-                if(answer) {
-                    
-                    checkGapTiles:
-                    for (let tile of gapTiles) {
-                        const pieceX = tile.col - minCol;
-                        const pieceY = tile.row - minRow;
+                    if (pieceX < 0 || pieceX >= o.width || pieceY < 0 || pieceY >= o.height) {
+                        answer = false; // Tile is out of bounds of the piece
+                        continue;
+                    }
+                    if (o.shape[pieceY][pieceX] !== 1) {
                         
-                        if (pieceX < 0 || pieceX >= this.width || pieceY < 0 || pieceY >= this.height) {
-                            
-                            answer = false; // Tile is out of bounds of the piece
-                            break checkGapTiles;
-                        }
-                        if (this.shape[pieceY][pieceX] !== 1) {
-                            
-                            answer = false; // Piece cannot fill this tile
-                            break checkGapTiles;
-                        }
+                        answer = false; // Piece cannot fill this tile
+                        continue;
                     }
                 }
-
                 if(answer) { 
-                    
-                    answer = true;
-                    break checkFlips;
+                    console.log(`piece ${o.name} can be used to fill gap (${gapTiles[0].col}, ${gapTiles[0].row})`);
+                    return true;
                 }
-                else {
-                    
-                    this.rotate(); // Rotate the piece for the next check
-                }
-                
             }
-            if(this.isFlipable) { this.flip(); } // Flip the piece if it is flipable
         }
-
-        return answer; // If no rotation or flip allows the piece to fill the gap, return false
-
-
-        
-        
+        return false;
     }
 
     rotate(shape) {
@@ -202,17 +174,25 @@ checkRotations:
         return {col, row};
     }
 
-    show(x, y, gridSize = 40) {
+    show(x, y, orientation, gridSize = 40) {
         push();
         stroke(200, 40);
         translate(x, y);
-        for (let i = 0; i < this.height; i++) {
-            for (let j = 0; j < this.width; j++) {
-                if (this.shape[i][j] === 1) {
-                    fill(this.fillColor);
+        const pileUsed = (this.orientations.find(o => o.inUse)) ? true : false;
+        let opacity = 1;
+        if(pileUsed) opacity = 0.25;
+        if(orientation.inUse) opacity = 1;
+        for (let i = 0; i < orientation.height; i++) {
+            for (let j = 0; j < orientation.width; j++) {
+                fill(`rgba(${orientation.fillColor.hexToRgb()}, ${opacity})`);
+                if (orientation.shape[i][j] === 1) {
                     rect(j * gridSize, i * gridSize, gridSize, gridSize);
                 }
             }
+        }
+        if(orientation.canBeUsed) {
+            fill(0, 200, 0, 100);
+            circle(x, y, 50);
         }
         pop();
     }

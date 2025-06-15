@@ -16,7 +16,7 @@ let testPieces = [
     // {piece: Piece.l, col: 6, row: 0},
 
 function setup() {
-    createCanvas(tileSize * gridCols, tileSize * gridRows + 100);
+    createCanvas(tileSize * gridCols, tileSize * gridRows + 300);
     grid = new Grid(gridCols, gridRows, tileSize);
     
 
@@ -33,8 +33,8 @@ function setup() {
     // grid.placePiece(Piece.e, 6, 2);
     // grid.placePiece(Piece.k, 7, 4);
     
-    document.querySelector("#btn-solve").addEventListener("click", () => beginSolve = !beginSolve);
-    document.querySelector("#btn-test").addEventListener("click", trySolve);
+    document.querySelector("#btn-solve").addEventListener("click", () => solve());
+    document.querySelector("#btn-test").addEventListener("click", () => { beginSolve = !beginSolve; });
     document.querySelector("#btn-traverse").addEventListener("click", traverse);
 
     //pieces.push(Piece.k);
@@ -56,8 +56,9 @@ function test() {
     testIndex++;
 
 }
-
-function trySolve() {
+let level = 0;
+function trySolve(orientations = []) {
+    
     const tile = grid.tiles.find(t => t.isEmpty);
     if(!tile) {
         console.log("all tiles are filled. Completed");
@@ -71,109 +72,102 @@ function trySolve() {
         return false;
     }
 
-    const orientations = [];
-
-    for(let piece of availableTiles) {
-        orientations.push(piece.orientations);
+    if(orientations.length === 0) {
+        for(let piece of availableTiles) {
+            orientations.push(piece.orientations);
+        }
     }
 
+    const padding = " ".repeat((12 - orientations.length) * 2); 
+
+    console.log(`${padding}${orientations.length} orientations`);
+
+    level += 1;
+    if(level > 100) {
+        console.log(`${padding}LEVEL EXCEEDED MAXIMUM`);
+        return false;
+    }
+
+
     if(orientations.length === 0) {
-        console.warn(`no more available orientations for tile (${tile.col}, ${tile.row})`);
+        console.warn(`${padding}no more available orientations for tile (${tile.col}, ${tile.row})`);
         return false;
     }
     all:
-    for(let piece of orientations) {
+    for(let i =0; i< orientations.length; i++) {
+    
+        const piece = orientations[i];
         piece:
         for(let orientation of piece) {
 
             const success = grid.placePiece(orientation, tile.col, tile.row);
 
             if(success) {
-                debugger;
-                if(trySolve()) {
+                console.log(`${padding}${orientation.name} placed on (${tile.col}, ${tile.row})`);
+                if(trySolve(orientations.slice(1))) {
                     return true;
                 }
                 else {
+                    console.log(`${padding}didn't work out. removing ${orientation.name} from (${tile.col}, ${tile.row})`);
                     grid.removePiece(orientation);
                 }
             }
         }
     }
-    console.log('all possible orientations tried. no solution found');
+    console.log(`${padding}all possible orientations tried. no solution found`);
     return false;
 }
 
 
-let currentEmptyTile;
-let currentPieceRotationIndex;
-let currentPieceFlipIndex;
-let currentPiece;
-let sequence = [];
+const piles = [];
+const pilesIndex = [];
+let moveNumber = 0;
+let currentTile;
+let doneOnce = false;
 
 function solve() {
-    if (grid.isFull) { console.log("grid is full. No action needed."); return; }
+ 
+    // find an empty tile
+    currentTile = grid.tiles.find(t => t.isEmpty);
 
-    if(!currentEmptyTile) {
-        currentEmptyTile = grid.tiles.find(t => t.isEmpty);
-        
+    // if not empty tile found, then board is full
+    if(!currentTile) {
+        console.log(`could not find an empty tile. Board is full`);
+        return;
     }
-    if (!currentEmptyTile) { console.log('could not get an empty tile, even though grid is not full'); return; }
-    if (!currentPiece) {
-        currentPiece = Piece.all.find(p => !p.inUse && !p.skip);
-        if(!currentPiece) {
+    
+    // check all orientations that could fit from all 12 pieces and add them to array
+    if (!piles[moveNumber]) {
+        
+        
+        if(piles[moveNumber].length > 0) pilesIndex[moveNumber] = 0;
+
+        if(piles[moveNumber].length === 0) {
+            console.error(`could not find any orientations for moveNumber ${moveNumber}. going back`);
             
-            
-            console.log('cant get an unused piece even though the grid is not full');
-            for(let i = sequence.length - 1; i>=0 ; i--) {
-                grid.removePiece(sequence[i].piece);
-                sequence.pop();
-k
-            }
-            currentEmptyTile = null;
             return;
         }
-        currentPieceRotationIndex = 0;
-        currentPieceFlipIndex = 0;
-
-        sequence.push({
-            piece: currentPiece,
-            tile: currentEmptyTile,
-            rotation: currentPieceRotationIndex,
-            flip: currentPieceFlipIndex,
-            consumed: false
-        });
     }
 
-    
-
-   const result = grid.placePiece(currentPiece, currentEmptyTile.col, currentEmptyTile.row);
-   if (!result) {
-    console.log('failed to place');
-    if(currentPieceRotationIndex < currentPiece.rotationCount) {
-        console.log('will rotate');
-        currentPiece.rotate();
-        currentPieceRotationIndex += 1;
-        
-    } else if(currentPieceFlipIndex < (currentPiece.isFlipable ? 1 : 0)) {
-        console.log('will flip');
-        currentPiece.flip();
-        currentPieceRotationIndex = 0;
-        currentPieceFlipIndex += 1;
+    const o = piles[moveNumber][pilesIndex[moveNumber]];
+    if(!o) {
+        backtrack();
+        return;
+    }
+    if(!o.inUse) {
+        grid.placePiece(o, currentTile.col, currentTile.row);
+        moveNumber += 1;
+        doneOnce = false;
     } else {
-        console.log('will skip');
-        
-        currentPiece.skip = true;
-        currentPiece = null;
-        sequence.pop();
+        pilesIndex[moveNumber] += 1;
+        if(pilesIndex[moveNumber] > piles[moveNumber].length - 1) {
+            moveNumber += 1;
+        }
     }
-   }
-   else {
-    console.log('Piece placed...');
-    for(let piece of Piece.all.filter(p => p.skip)) { piece.skip = false; }
-    currentPiece = null;
-    currentEmptyTile = null;
-   }
-    
+
+
+
+
 
 
 }
@@ -190,11 +184,59 @@ function mousePressed() {
     
 }
 
+function calculate() {
+    
+    currentTile = grid.tiles.find(t => t.isEmpty);
+    grid.resetCanBeUsed();    
+    pilesIndex[moveNumber] = -1;
+    piles[moveNumber] = grid.orientationsThatFitIn(currentTile);
+    piles[moveNumber].forEach(o => o.canBeUsed = true);
+    if(piles[moveNumber].length > 0) {
+        pilesIndex[moveNumber] = 0;
+    }
+}
+
+function backtrack() {
+    let optionAvailble = false;
+    while(!optionAvailble && moveNumber > 0) {
+        
+        pilesIndex.pop();
+        moveNumber -= 1;
+        const o = piles[moveNumber][pilesIndex[moveNumber]];
+        grid.removePiece(o);
+
+        if(pilesIndex[moveNumber] < piles[moveNumber].length - 1) {
+            pilesIndex[moveNumber] += 1;
+            optionAvailble = true;
+        }
+
+    };
+}
+
 function draw() {
+ 
+    if(!doneOnce) {
+
+        calculate();
+        doneOnce = true;
+    }
+
     background(220);
     grid.show();
-    grid.showMap(20, height - 70, 6);
+    grid.showMap(10, grid.rows * tileSize + 20, 6);
+    grid.highlight(currentTile);
     if(beginSolve) solve();
     
 }
 
+String.prototype.hexToRgb = function() {
+ 
+    const hex = this.replace("#", "");
+  const arrBuff = new ArrayBuffer(4);
+  const vw = new DataView(arrBuff);
+  vw.setUint32(0, parseInt(hex, 16), false);
+  var arrByte = new Uint8Array(arrBuff);
+
+  return arrByte[1] + "," + arrByte[2] + "," + arrByte[3];
+
+}
