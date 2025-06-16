@@ -1,5 +1,5 @@
 const tileSize = 40;
-const gridCols = 12;
+const gridCols = 10;
 const gridRows = 5;
 let grid;
 let beginSolve = false;
@@ -32,7 +32,7 @@ function setup() {
     //grid.placePiece(Piece.p.orientations[0], 8, 0);
 
 
-    stepsNumber = 20000; 
+    stepsNumber = 1; 
 
 }
 

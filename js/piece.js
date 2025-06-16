@@ -11,8 +11,19 @@ class Piece {
     static n = new Piece(["110","010","011"], "#6BD9E5", "N", 2, true);
     static e = new Piece(["0100","1111"], "#633a36", "E", 4, true);
     static k = new Piece(["11111"], "#0f3681", "K", 2, false);
-    static all = [Piece.u, Piece.t, Piece.w, Piece.l, Piece.z,
-        Piece.p, Piece.c, Piece.y, Piece.b, Piece.n, Piece.e, Piece.k 
+    static all = [
+        //Piece.u, 
+        Piece.t, 
+        Piece.w, 
+        Piece.l, 
+        Piece.z,
+        Piece.p, 
+        Piece.c, 
+        //Piece.y, 
+        Piece.b, 
+        Piece.n, 
+        Piece.e, 
+        Piece.k 
     ];
 
     static {
