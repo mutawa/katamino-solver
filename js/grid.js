@@ -37,6 +37,7 @@ class Grid {
         const found = [];
         
         for(let piece of Piece.all) {
+            
             const pieceUsed = piece.orientations.find(o => o.inUse);
             if (pieceUsed) continue;
             for(let o of piece.orientations) {
@@ -54,13 +55,13 @@ class Grid {
         const col = tile.col;
 
         if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
-            console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
+            // console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
             return false; // Piece is too large for the grid
         }
 
         if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
             row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
-            console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+            // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
             return false; // Piece is out of bounds
         }
 
@@ -70,7 +71,7 @@ class Grid {
                 if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
                 const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
                 if (!this.tiles[tileIndex].isEmpty) {
-                    console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                    // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
                     return false; // Collision detected
                 }
             }
@@ -81,7 +82,7 @@ class Grid {
         let createsGaps = false;
 
         if(this.traverse()) {
-            console.warn("Gaps found after placing piece:", o.name);
+            // console.warn("Gaps found after placing piece:", o.name);
             createsGaps = true;
         }
 
@@ -106,13 +107,13 @@ class Grid {
         
         
         if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
-            console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
+            // console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
             return false; // Piece is too large for the grid
         }
 
         if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
             row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
-            console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+            // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
             return false; // Piece is out of bounds
         }
 
@@ -122,7 +123,7 @@ class Grid {
                 if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
                 const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
                 if (!this.tiles[tileIndex].isEmpty) {
-                    console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                    // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
                     return false; // Collision detected
                 }
             }
@@ -140,7 +141,7 @@ class Grid {
         let succefullyPlaced = true;
         
         if(this.traverse()) {
-            console.warn("Gaps found after placing piece:", o.name);
+            // console.warn("Gaps found after placing piece:", o.name);
             // remove the piece if it creates gaps
                 setTimeout(() => {
                     // console.warn(`Removing piece ${piece.name} due to gaps.`);
@@ -181,13 +182,13 @@ class Grid {
         for(let i = 0; i < gapCount; i++) {
             const gapTiles = this.tiles.filter(tile => tile.name === `g-${i}`);
             if(gapTiles.length < 5) {
-                console.warn(`Found a gap of ${gapTiles.length} tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
+                // console.warn(`Found a gap of ${gapTiles.length} tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
                 hasGaps = true; // If any gap has less than 5 tiles, we consider it a gap
                 for(let tile of gapTiles) {
                     tile.isGap = true; // Mark as a gap
                 }
             } else if (gapTiles.length === 5) {
-                console.warn(`Found a gap of 5 tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
+                // console.warn(`Found a gap of 5 tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
                 // check existing unplaced pieces to see if they can fill this gap
                 const piece = Piece.all.find(p => p.canFillGap(gapTiles));
                 if (!piece) {
@@ -329,7 +330,7 @@ class Grid {
         for (let piece of Piece.all) {
             let offsetY = 0;
             for(let o of piece.orientations) {
-
+                
                 push();
                 translate(offsetX, offsetY);
                 scale(0.25);

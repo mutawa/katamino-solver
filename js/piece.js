@@ -8,10 +8,26 @@ class Piece {
     static c = new Piece(["111","001","001"], "#039FC9", "C", 4, false);
     static y = new Piece(["010","110","011"], "#5b5b5b", "Y", 4, true);
     static b = new Piece(["011","111"], "#ce3665", "B", 4, true);
-    static n = new Piece(["110","010","011"], "#00adc2", "N", 2, true);
+    static n = new Piece(["110","010","011"], "#6BD9E5", "N", 2, true);
     static e = new Piece(["0100","1111"], "#633a36", "E", 4, true);
     static k = new Piece(["11111"], "#0f3681", "K", 2, false);
-    static all = [Piece.u, Piece.t, Piece.w, Piece.l, Piece.z,Piece.p, Piece.c, Piece.y, Piece.b, Piece.n, Piece.e, Piece.k ];
+    static all = [Piece.u, Piece.t, Piece.w, Piece.l, Piece.z,
+        Piece.p, Piece.c, Piece.y, Piece.b, Piece.n, Piece.e, Piece.k 
+    ];
+
+    static {
+        const originalObject = {property: 'XXX', propertyToWatch: 'YYY'};
+        const watchedProp = 'orientations';
+        const handler = {
+            set(target, key, value) {
+                if (key === watchedProp) {
+                debugger;
+                }
+                target[key] = value;
+            }
+        };
+        const wrappedObject = new Proxy(Piece.z, handler);
+    }
 
     constructor(arr, fillColor, name, rotationCount, isFlipable) {
         this.name = name;
@@ -21,19 +37,23 @@ class Piece {
         this.isFlipable = isFlipable; // Whether the piece can be flipped
         this.order = 0;
         this.orientations = [];
-        let shape;
-
+        
+        let shape = this.convertArrayToShape(arr);
 
         
         for(let r = 0; r < (isFlipable ? 2 : 1); r++) {
+            
             for(let i = 0; i < rotationCount; i++) {
                 
                 const id = rotationCount * r + i;
-                if(!shape) shape = this.convertArrayToShape(arr);
-    
-                shape = this.rotate(shape);
                 
+                shape = this.#rotate(shape);
+                if(r === 1 && i === 0 && isFlipable) {
+                    shape = this.#flip(shape);    
+                }
                 const topLeft = this.calcuateTopLeft(shape);
+    
+                
                 this.orientations.push({
                     id,
                     name: `${name}${id}`,
@@ -44,7 +64,7 @@ class Piece {
                     fillColor
                 });
             }
-            if(isFlipable) shape = this.flip(shape);
+            
         }
     }
 
@@ -74,7 +94,7 @@ class Piece {
         );
     }
 
-    flip(shape) {
+    #flip(shape) {
         
         // flip the piece horizontally
         if (!this.isFlipable) {
@@ -128,7 +148,7 @@ class Piece {
                     }
                 }
                 if(answer) { 
-                    console.log(`piece ${o.name} can be used to fill gap (${gapTiles[0].col}, ${gapTiles[0].row})`);
+                    // console.log(`piece ${o.name} can be used to fill gap (${gapTiles[0].col}, ${gapTiles[0].row})`);
                     return true;
                 }
             }
@@ -136,20 +156,16 @@ class Piece {
         return false;
     }
 
-    rotate(shape) {
-        
-
-        const oldWidth = shape[0].length;
-        const oldHeight = shape.length;
-
-
+    #rotate(oldShape) {
         // rotate the piece 90 degrees clockwise
-        // function should not return a new piece, but modify the existing one
+        const oldWidth = oldShape[0].length;
+        const oldHeight = oldShape.length;
+        
         const newShape = [];
         for (let j = 0; j < oldWidth; j++) {
             newShape[j] = [];
             for (let i = oldHeight - 1; i >= 0; i--) {
-                newShape[j][oldHeight - 1 - i] = shape[i][j];
+                newShape[j][oldHeight - 1 - i] = oldShape[i][j];
             }
         }
 
@@ -161,9 +177,13 @@ class Piece {
         let col = 0;
         let row = 0;
 
+        const shapeWidth = shape[0].length;
+        const shapeHeight = shape.length;
+        
+
         main:
-        for (let i = 0; i < this.height; i++) {
-            for (let j = 0; j < this.width; j++) {
+        for (let i = 0; i < shapeHeight; i++) {
+            for (let j = 0; j < shapeWidth; j++) {
                 if (shape[i][j] === 1) {
                     col = j;
                     row = i;
