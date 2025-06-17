@@ -12,14 +12,14 @@ class Piece {
     static e = new Piece(["0100","1111"], "#633a36", "E", 4, true);
     static k = new Piece(["11111"], "#0f3681", "K", 2, false);
     static all = [
-        //Piece.u, 
+        Piece.u, 
         Piece.t, 
         Piece.w, 
         Piece.l, 
         Piece.z,
         Piece.p, 
         Piece.c, 
-        //Piece.y, 
+        Piece.y, 
         Piece.b, 
         Piece.n, 
         Piece.e, 
@@ -209,22 +209,25 @@ class Piece {
         push();
         stroke(200, 40);
         translate(x, y);
-        const pileUsed = (this.orientations.find(o => o.inUse)) ? true : false;
-        let opacity = 1;
-        if(pileUsed) opacity = 0.25;
+        
+        // const pileUsed = (this.orientations.find(o => o.inUse)) ? true : false;
+        let opacity = 0.5;
         if(orientation.inUse) opacity = 1;
         for (let i = 0; i < orientation.height; i++) {
             for (let j = 0; j < orientation.width; j++) {
-                fill(`rgba(${orientation.fillColor.hexToRgb()}, ${opacity})`);
+                const fillColor = `rgba(${orientation.fillColor.hexToRgb()}, ${opacity})`;
+                fill(fillColor);
+                // if(pileUsed) opacity = 0.25;
                 if (orientation.shape[i][j] === 1) {
-                    rect(j * gridSize, i * gridSize, gridSize, gridSize);
+                    rect((j-orientation.topLeft.col - 0.5) * gridSize, (i - .5 )* gridSize, gridSize, gridSize);
+                    //rect(0, 0, 20, 20);
                 }
             }
         }
-        if(orientation.canBeUsed) {
-            fill(0, 200, 0, 100);
-            circle(x, y, 50);
-        }
+        // if(orientation.canBeUsed) {
+        //     fill(0, 200, 0, 100);
+        //     circle(x, y, 50);
+        // }
         pop();
     }
 }

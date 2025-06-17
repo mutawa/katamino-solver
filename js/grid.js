@@ -1,5 +1,7 @@
 class Grid {
-    constructor(cols, rows, cellSize) {
+    constructor(x, y, cols, rows, cellSize) {
+        this.x = x;
+        this.y = y;
         this.cols = cols;
         this.rows = rows;
         this.cellSize = cellSize;
@@ -7,10 +9,12 @@ class Grid {
         
         this.tiles = [];
         this.pieces = [];
-        
+        this.strokeWeight = 10;
+        this.strokeIncrement = -0.2;
+
         for (let j = 0; j < this.rows; j++) {
             for (let i = 0; i < this.cols; i++) {
-                const tile = new Tile(i, j, this.cellSize, rows, cols);
+                const tile = new Tile(x, y, i, j, this.cellSize, rows, cols);
                 
                 this.tiles.push(tile);
             }
@@ -18,11 +22,18 @@ class Grid {
 
     }
     highlight(tile) {
+        this.strokeWeight += this.strokeIncrement;
+
+        if(this.strokeWeight < 2 || this.strokeWeight > 10) {
+            this.strokeIncrement *= -1;
+        }
+        
         if(!tile) return;
         push();
-        noFill();
-        stroke(255, 0, 0, 50);
-        strokeWeight(3);
+        
+        fill(200, 0, 0, 20 + (this.strokeWeight * 4));
+        stroke(20, 20, 100, 100);
+        strokeWeight(min(5, this.strokeWeight));
         rect(tile.x, tile.y, this.cellSize, this.cellSize);
         pop();
     }
@@ -46,6 +57,7 @@ class Grid {
                 }
             }
         }
+        found.shuffle();
         return found;
 
     }
@@ -91,6 +103,7 @@ class Grid {
     }
 
     removePiece(orientation) {
+        
         for(let tile of this.tiles.filter(t => t.name === orientation.name)) {
             tile.color = "";
             tile.name = "";
@@ -100,6 +113,7 @@ class Grid {
         orientation.inUse = false;
 
         this.pieces = this.pieces.filter(p => p.name !== orientation.name);
+        
         this.traverse(); // Check for gaps after removing the piece
     }
 
@@ -141,13 +155,7 @@ class Grid {
         let succefullyPlaced = true;
         
         if(this.traverse()) {
-            // console.warn("Gaps found after placing piece:", o.name);
-            // remove the piece if it creates gaps
-                setTimeout(() => {
-                    // console.warn(`Removing piece ${piece.name} due to gaps.`);
-                    // this.removePiece(piece);
-                }
-                , 100); // Delay to allow visual feedback
+
                 this.removePiece(o);
                 succefullyPlaced = false; // Mark as unsuccessfully placed
         }
@@ -181,16 +189,16 @@ class Grid {
         let hasGaps = false;
         for(let i = 0; i < gapCount; i++) {
             const gapTiles = this.tiles.filter(tile => tile.name === `g-${i}`);
-            if(gapTiles.length < 5) {
+            if(gapTiles.length % 5 > 0) {
                 // console.warn(`Found a gap of ${gapTiles.length} tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
-                hasGaps = true; // If any gap has less than 5 tiles, we consider it a gap
+                hasGaps = true; 
                 for(let tile of gapTiles) {
                     tile.isGap = true; // Mark as a gap
                 }
             } else if (gapTiles.length === 5) {
-                // console.warn(`Found a gap of 5 tiles: ${gapTiles.map(t => `(${t.col}, ${t.row})`).join(", ")}`);
-                // check existing unplaced pieces to see if they can fill this gap
+                
                 const piece = Piece.all.find(p => p.canFillGap(gapTiles));
+
                 if (!piece) {
                     hasGaps = true; // If no piece can fill the gap, we consider it a gap
                     for(let tile of gapTiles) {
@@ -289,10 +297,7 @@ class Grid {
         for(let tile of this.tiles) {
             tile.show();
         }
-
-        // for (let piece of this.pieces.sort((a, b) => a.order - b.order)) {
-        //     piece.show(piece.col * tileSize, piece.row * tileSize, tileSize);
-        // }
+        
     }
 
     checkIfAllSquaresFilled() {
