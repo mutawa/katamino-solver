@@ -11,6 +11,9 @@ let solver;
 function setup() {
     const cnv = createCanvas(tileSize * 13, tileSize * gridRows + 260);
     cnv.parent("#canvas");
+    
+    
+
     grid = new Grid(gridPaddingX, gridPaddingY, gridCols, gridRows, tileSize);
     solver = new Solver({ grid, steps: 1});
 
@@ -19,8 +22,10 @@ function setup() {
     document.querySelector("#btn-inc-steps").addEventListener("click", () => { solver.incSteps(100); });
     document.querySelector("#btn-dec-steps").addEventListener("click", () => { solver.decSteps(100);  });
 
-    
+    //document.querySelector("canvas").addEventListener('contextmenu', event => event.preventDefault());
+
     solver.calculate();
+    Piece.setupSelectors(gridPaddingX, gridPaddingY + gridRows * tileSize + 20, tileSize * .25);
 }
 
 
@@ -28,28 +33,57 @@ function draw() {
     background(220);
     grid.show();
     // grid.showMap(10, grid.rows * tileSize + 20, 6);
-    grid.highlight(solver.currentTile);
+    // grid.highlight(solver.currentTile);
     if(beginSolving) { 
         for(let i = 0 ; i < solver.stepsNumber ; i++) {
             solver.solve();
         }
     }
+
+    for(let piece of Piece.all) {
+        piece.showSelector();
+    }
     // solver.show();
     
-    selectedPiece && selectedPiece.show(mouseX, mouseY, selectedPiece.orientations[ii]);
+    selectedPiece && selectedPiece.show(mouseX, mouseY, selectedPiece.orientations[selectedOrientationIndex], tileSize, 0.5);
 }
-let ii = 0;
-let selectedPiece = Piece.e;
-function mouseWheel() {
-    ii += 1;
-    if(ii >= selectedPiece.orientations.length) ii = 0;
+let selectedOrientationIndex = 0;
+let selectedPiece = null;
+function mouseWheel(e) {
+    if(e.deltaY < 0) {
+        selectedOrientationIndex -= 1;
+        if(selectedOrientationIndex < 0) selectedOrientationIndex = selectedPiece.orientations.length - 1;
+    }
+    else if(e.deltaY > 0)
+    {
+        selectedOrientationIndex += 1;
+        if(selectedOrientationIndex >= selectedPiece.orientations.length) selectedOrientationIndex = 0;
+    }
+    
 }
 
 function mouseClicked() {
+    
+    
+    if(mouseY > gridPaddingY + grid.height && selectedPiece) {
+        console.log("Deselecting piece");
+        selectedPiece.enableSelector();
+        selectedPiece = null;
+        return;
+    
+    }
+    const selectorPiece = Piece.all.find(p => p.contains(mouseX, mouseY, tileSize * 0.25));
+    if(selectorPiece && selectorPiece.selectorVisible) {
+        console.log("Selected piece:", selectorPiece.name);
+        selectedPiece = selectorPiece;
+        selectedPiece.disableSelector();
+        selectedOrientationIndex = 0;
+        return;
+    }
     const tile = grid.tiles.find(t => t.contain(mouseX, mouseY));
     if(!tile) return;
     if(tile.isEmpty && selectedPiece) {
-        grid.placePiece(selectedPiece.orientations[ii], tile.col, tile.row);
+        grid.placePiece(selectedPiece.orientations[selectedOrientationIndex], tile.col, tile.row, true);
         selectedPiece = null;
     } else if(!tile.isEmpty && !selectedPiece) {
         
@@ -57,7 +91,7 @@ function mouseClicked() {
         const o = p.orientations.find(o => o.name === tile.name);
         grid.removePiece(o);
         
-        ii = o.id;
+        selectedOrientationIndex = o.id;
         selectedPiece = p;
     }
 }

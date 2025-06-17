@@ -6,7 +6,8 @@ class Grid {
         this.rows = rows;
         this.cellSize = cellSize;
         this.isFull = false;
-        
+        this.height = rows * cellSize;
+        this.width = cols * cellSize;
         this.tiles = [];
         this.pieces = [];
         this.strokeWeight = 10;
@@ -94,10 +95,10 @@ class Grid {
         let createsGaps = false;
 
         if(this.traverse()) {
-            // console.warn("Gaps found after placing piece:", o.name);
+            
             createsGaps = true;
         }
-
+        
         this.removePiece(o);
         return !createsGaps;
     }
@@ -112,38 +113,43 @@ class Grid {
         }
         orientation.inUse = false;
 
+        const piece = Piece.all.find(p => p.orientations.includes(orientation));
+        
+
         this.pieces = this.pieces.filter(p => p.name !== orientation.name);
         
         this.traverse(); // Check for gaps after removing the piece
     }
 
-    placePiece(o, col, row) {
+    placePiece(o, col, row, force = false) {
         
+        const piece = Piece.all.find(p => p.orientations.includes(o));
         
         if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
             // console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
             return false; // Piece is too large for the grid
         }
-
+        
         if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
             row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
-            // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
-            return false; // Piece is out of bounds
-        }
-
-        // check if the piece collides with any existing piece
-        for (let i = 0; i < o.height; i++) {
-            for (let j = 0; j < o.width; j++) {
-                if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
-                const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
-                if (!this.tiles[tileIndex].isEmpty) {
-                    // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
-                    return false; // Collision detected
+                // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+                return false; // Piece is out of bounds
+            }
+            
+            // check if the piece collides with any existing piece
+            for (let i = 0; i < o.height; i++) {
+                for (let j = 0; j < o.width; j++) {
+                    if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
+                    const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
+                    if (!this.tiles[tileIndex].isEmpty) {
+                        // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                        return false; // Collision detected
+                    }
                 }
             }
-        }
-
-        
+            
+        piece.disableSelector(); // Hide the piece selector after placing the piece
+            
 
 
         this.occupy(o, col, row);
@@ -154,10 +160,11 @@ class Grid {
 
         let succefullyPlaced = true;
         
-        if(this.traverse()) {
+        if(this.traverse() && !force) {
 
                 this.removePiece(o);
                 succefullyPlaced = false; // Mark as unsuccessfully placed
+                piece.enableSelector(); // Show the piece selector again
         }
             
         this.isFull = this.checkIfAllSquaresFilled();

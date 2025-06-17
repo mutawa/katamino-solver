@@ -62,7 +62,7 @@ class Tile {
             
             if(this.isGap) {
                 // draw red cross in the center of the tile
-                stroke("red");
+                stroke(255, 0, 0, 50);
                 strokeWeight(4);
                 line(this.x + 2, this.y + 2, this.x + this.width - 2, this.y + this.height - 2);
                 line(this.x + this.width - 2, this.y + 2, this.x + 2, this.y + this.height - 2);

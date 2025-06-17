@@ -26,24 +26,26 @@ class Piece {
         Piece.k 
     ];
 
-    static {
-        const originalObject = {property: 'XXX', propertyToWatch: 'YYY'};
-        const watchedProp = 'orientations';
-        const handler = {
-            set(target, key, value) {
-                if (key === watchedProp) {
-                debugger;
-                }
-                target[key] = value;
-            }
-        };
-        const wrappedObject = new Proxy(Piece.z, handler);
+    static setupSelectors(x, y, gridSize = 5) {
+        Piece.u.setSelectorPosition(x, y, 3, gridSize);
+        Piece.t.setSelectorPosition(x + 40, y, 3, gridSize);
+        Piece.w.setSelectorPosition(x + 90, y, 3, gridSize);
+        Piece.l.setSelectorPosition(x + 130, y, 7, gridSize);
+        Piece.z.setSelectorPosition(x + 160, y, 1, gridSize);
+        Piece.p.setSelectorPosition(x + 220, y, 0, gridSize);
+        Piece.c.setSelectorPosition(x + 250, y, 1, gridSize);
+        Piece.y.setSelectorPosition(x + 290, y, 1, gridSize);
+        Piece.b.setSelectorPosition(x + 330, y, 0, gridSize);
+        Piece.n.setSelectorPosition(x + 380, y, 0, gridSize);
+        Piece.e.setSelectorPosition(x + 400, y, 0, gridSize);
+        Piece.k.setSelectorPosition(x + 430, y, 0, gridSize);
+
     }
 
     constructor(arr, fillColor, name, rotationCount, isFlipable) {
         this.name = name;
         this.fillColor = fillColor;
-        
+        this.selectorVisible = true;
         this.rotationCount = rotationCount; // Number of rotations the piece can have
         this.isFlipable = isFlipable; // Whether the piece can be flipped
         this.order = 0;
@@ -79,6 +81,37 @@ class Piece {
         }
     }
 
+    enableSelector() {
+        this.selectorVisible = true;
+    }
+    disableSelector() {
+        this.selectorVisible = false;
+    }
+
+    setSelectorPosition(x, y, orientationIndex, gridSize = 5) {
+        this.x = x;
+        this.y = y;
+        this.selectorOrientationIndex = orientationIndex;
+        this.selectorGridSize = gridSize;
+    }
+
+    showSelector() {
+        if (!this.selectorVisible) return;
+        push();
+        translate(this.x, this.y);
+        const orientation = this.orientations[this.selectorOrientationIndex];
+        stroke(200, 40);
+        for (let i = 0; i < orientation.height; i++) {
+            for (let j = 0; j < orientation.width; j++) {
+                if (orientation.shape[i][j] === 1) {
+                    fill(`rgba(${orientation.fillColor.hexToRgb()}, 1)`);
+                    rect((j-orientation.topLeft.col - 0.5) * this.selectorGridSize, (i - .5 )* this.selectorGridSize, this.selectorGridSize, this.selectorGridSize);
+                }
+            }
+        }
+        pop();
+    }
+
     convertArrayToShape(arr) {
         const shapeWidth = arr[0].length;
         const shapeHeight = arr.length;
@@ -94,15 +127,16 @@ class Piece {
     }
 
     contains(x, y, gridSize) {
-        const gridX = Math.floor(x / gridSize);
-        const gridY = Math.floor(y / gridSize);
-        return (
-            gridX >= this.col &&
-            gridX < this.col + this.width &&
-            gridY >= this.row &&
-            gridY < this.row + this.height &&
-            this.shape[gridY - this.row][gridX - this.col] === 1
-        );
+        // Check if the point (x, y) is within the bounds of the piece's selector
+        const orientation = this.orientations[this.selectorOrientationIndex];
+        const topLeft = orientation.topLeft;
+        const width = orientation.width;
+        const height = orientation.height;
+
+        return x >= this.x  &&
+               x <= this.x + (width) * gridSize &&
+               y >= this.y  &&
+               y <= this.y + (height) * gridSize;
     }
 
     #flip(shape) {
@@ -205,29 +239,23 @@ class Piece {
         return {col, row};
     }
 
-    show(x, y, orientation, gridSize = 40) {
+    show(x, y, orientation, gridSize = 40, opacity = 1) {
         push();
         stroke(200, 40);
         translate(x, y);
         
-        // const pileUsed = (this.orientations.find(o => o.inUse)) ? true : false;
-        let opacity = 0.5;
-        if(orientation.inUse) opacity = 1;
+        // if(orientation.inUse) opacity = 1;
         for (let i = 0; i < orientation.height; i++) {
             for (let j = 0; j < orientation.width; j++) {
                 const fillColor = `rgba(${orientation.fillColor.hexToRgb()}, ${opacity})`;
                 fill(fillColor);
-                // if(pileUsed) opacity = 0.25;
+        
                 if (orientation.shape[i][j] === 1) {
                     rect((j-orientation.topLeft.col - 0.5) * gridSize, (i - .5 )* gridSize, gridSize, gridSize);
-                    //rect(0, 0, 20, 20);
                 }
             }
         }
-        // if(orientation.canBeUsed) {
-        //     fill(0, 200, 0, 100);
-        //     circle(x, y, 50);
-        // }
+        
         pop();
     }
 }
