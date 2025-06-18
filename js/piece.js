@@ -27,18 +27,25 @@ class Piece {
     ];
 
     static setupSelectors(x, y, gridSize = 5) {
-        Piece.u.setSelectorPosition(x, y, 3, gridSize);
-        Piece.t.setSelectorPosition(x + 40, y, 3, gridSize);
-        Piece.w.setSelectorPosition(x + 90, y, 3, gridSize);
-        Piece.l.setSelectorPosition(x + 130, y, 7, gridSize);
-        Piece.z.setSelectorPosition(x + 160, y, 1, gridSize);
-        Piece.p.setSelectorPosition(x + 220, y, 0, gridSize);
-        Piece.c.setSelectorPosition(x + 250, y, 1, gridSize);
-        Piece.y.setSelectorPosition(x + 290, y, 1, gridSize);
-        Piece.b.setSelectorPosition(x + 330, y, 0, gridSize);
-        Piece.n.setSelectorPosition(x + 380, y, 0, gridSize);
-        Piece.e.setSelectorPosition(x + 400, y, 0, gridSize);
-        Piece.k.setSelectorPosition(x + 430, y, 0, gridSize);
+        let xOffset = 0;
+        Piece.u.setSelectorPosition(x + xOffset, y, 3, gridSize); xOffset += Piece.getSelectorWidth(Piece.u);
+        Piece.t.setSelectorPosition(x + xOffset, y, 3, gridSize); xOffset += Piece.getSelectorWidth(Piece.t);
+        Piece.w.setSelectorPosition(x + xOffset, y, 2, gridSize); xOffset += Piece.getSelectorWidth(Piece.w);
+        Piece.l.setSelectorPosition(x + xOffset, y, 7, gridSize); xOffset += Piece.getSelectorWidth(Piece.l);
+        Piece.z.setSelectorPosition(x + xOffset, y, 1, gridSize); xOffset += Piece.getSelectorWidth(Piece.z);
+        Piece.p.setSelectorPosition(x + xOffset, y, 0, gridSize); xOffset += Piece.getSelectorWidth(Piece.p);
+        Piece.c.setSelectorPosition(x + xOffset, y, 1, gridSize); xOffset += Piece.getSelectorWidth(Piece.c);
+        Piece.y.setSelectorPosition(x + xOffset, y, 1, gridSize); xOffset += Piece.getSelectorWidth(Piece.y);
+        Piece.b.setSelectorPosition(x + xOffset, y, 0, gridSize); xOffset += Piece.getSelectorWidth(Piece.b);
+        Piece.n.setSelectorPosition(x + xOffset, y, 0, gridSize); xOffset += Piece.getSelectorWidth(Piece.n);
+        Piece.e.setSelectorPosition(x + xOffset, y, 0, gridSize); xOffset += Piece.getSelectorWidth(Piece.e);
+        Piece.k.setSelectorPosition(x + xOffset, y, 0, gridSize); xOffset += Piece.getSelectorWidth(Piece.k);
+
+    }
+
+    static getSelectorWidth(piece) {
+        const orientation = piece.orientations[piece.selectorOrientationIndex];
+        return orientation.boundingBox.w + 15;
 
     }
 
@@ -65,13 +72,18 @@ class Piece {
                     shape = this.#flip(shape);    
                 }
                 const topLeft = this.calcuateTopLeft(shape);
+
+                
+
+                
     
                 
                 this.orientations.push({
                     id,
                     name: `${name}${id}`,
                     shape, 
-                    topLeft, 
+                    topLeft,
+                    
                     width: shape[0].length, 
                     height: shape.length,
                     fillColor
@@ -93,22 +105,36 @@ class Piece {
         this.y = y;
         this.selectorOrientationIndex = orientationIndex;
         this.selectorGridSize = gridSize;
+        this.orientations[orientationIndex].boundingBox = this.calculateBoundingBox(x, y, this.orientations[orientationIndex].shape);
     }
 
+    highlite() {
+        if (!this.selectorVisible) return;
+        this.showBorder = true;
+    }
+    
     showSelector() {
         if (!this.selectorVisible) return;
         push();
-        translate(this.x, this.y);
         const orientation = this.orientations[this.selectorOrientationIndex];
+        translate(orientation.boundingBox.x, orientation.boundingBox.y);
+        if(this.showBorder) {
+            scale(1.1);
+            noStroke();
+            fill(250, 100);
+            strokeWeight(2);
+            rect(-5, -5, orientation.boundingBox.w + 10, orientation.boundingBox.h + 10, 10, 10);
+        }
         stroke(200, 40);
         for (let i = 0; i < orientation.height; i++) {
             for (let j = 0; j < orientation.width; j++) {
                 if (orientation.shape[i][j] === 1) {
                     fill(`rgba(${orientation.fillColor.hexToRgb()}, 1)`);
-                    rect((j-orientation.topLeft.col - 0.5) * this.selectorGridSize, (i - .5 )* this.selectorGridSize, this.selectorGridSize, this.selectorGridSize);
+                    rect((j) * this.selectorGridSize, (i )* this.selectorGridSize, this.selectorGridSize, this.selectorGridSize);
                 }
             }
         }
+        this.showBorder = false;
         pop();
     }
 
@@ -127,9 +153,10 @@ class Piece {
     }
 
     contains(x, y, gridSize) {
+        
         // Check if the point (x, y) is within the bounds of the piece's selector
         const orientation = this.orientations[this.selectorOrientationIndex];
-        const topLeft = orientation.topLeft;
+        
         const width = orientation.width;
         const height = orientation.height;
 
@@ -215,6 +242,12 @@ class Piece {
         }
 
         return newShape;
+    }
+
+    calculateBoundingBox(x, y, shape) {
+        
+        return ( {x, y, w: shape[0].length * this.selectorGridSize, h: shape.length * this.selectorGridSize});
+        
     }
 
     calcuateTopLeft(shape) {

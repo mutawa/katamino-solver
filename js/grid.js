@@ -126,13 +126,14 @@ class Grid {
         const piece = Piece.all.find(p => p.orientations.includes(o));
         
         if (row + o.height - o.topLeft.row > this.rows || col + o.width - o.topLeft.col > this.cols) {
-            // console.warn(`Piece ${o.name} is too large to fit in (${col},${row}) the grid.`);
+            piece.enableSelector();
             return false; // Piece is too large for the grid
         }
         
         if (col - o.topLeft.col < 0 || col + o.width - o.topLeft.col > this.cols ||
             row - o.topLeft.row < 0 || row + o.height - o.topLeft.row > this.rows) {
-                // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to out of bounds.`);
+                
+                piece.enableSelector();
                 return false; // Piece is out of bounds
             }
             
@@ -142,7 +143,8 @@ class Grid {
                     if (o.shape[i][j] === 0) continue; // Skip empty squares in the piece shape
                     const tileIndex = (col + j - o.topLeft.col) + (row + i - o.topLeft.row) * this.cols; // Calculate the index in the 1D tiles array
                     if (!this.tiles[tileIndex].isEmpty) {
-                        // console.warn(`Piece ${o.name} cannot be placed at (${col}, ${row}) due to collision with existing piece.`);
+                
+                        piece.enableSelector();
                         return false; // Collision detected
                     }
                 }

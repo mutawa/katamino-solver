@@ -43,9 +43,13 @@ function draw() {
     for(let piece of Piece.all) {
         piece.showSelector();
     }
-    // solver.show();
+    
     
     selectedPiece && selectedPiece.show(mouseX, mouseY, selectedPiece.orientations[selectedOrientationIndex], tileSize, 0.5);
+    const selectorPiece = Piece.all.find(p => p.contains(mouseX, mouseY, tileSize * 0.25));
+    if(selectorPiece && selectorPiece.selectorVisible) {
+        selectorPiece.highlite();
+    }
 }
 let selectedOrientationIndex = 0;
 let selectedPiece = null;
@@ -74,10 +78,13 @@ function mouseClicked() {
     }
     const selectorPiece = Piece.all.find(p => p.contains(mouseX, mouseY, tileSize * 0.25));
     if(selectorPiece && selectorPiece.selectorVisible) {
-        console.log("Selected piece:", selectorPiece.name);
+        
         selectedPiece = selectorPiece;
         selectedPiece.disableSelector();
-        selectedOrientationIndex = 0;
+        selectedOrientationIndex = selectorPiece.selectorOrientationIndex;
+        
+        //console.log(selectedPiece.orientations[selectedOrientationIndex].name);
+        
         return;
     }
     const tile = grid.tiles.find(t => t.contain(mouseX, mouseY));
